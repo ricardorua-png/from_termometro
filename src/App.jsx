@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, Button, InputNumber } from "antd";
+import { Card, Button, InputNumber, Select } from "antd";
 import axios from "axios";
 import {
   BarChart,
@@ -19,8 +19,8 @@ const preguntas = [
   { key: "estudios", titulo: "📚 Estudios realizados" },
   { key: "folletos", titulo: "🎞 folletos entregados" },
   { key: "contactos", titulo: "📞 contactos alcanzados" },
-  { key: "trabajadas", titulo: "👦 personas que horamos y trabajamos" },
-  { key: "virtuales", titulo: "📳📲📱 estudios virtuales" },
+  { key: "trabajadas", titulo: "👦 personas que oramos y trabajamos" },
+  { key: "virtuales2", titulo: "📳 Estudios virtuales" },
 ];
 
 function App() {
@@ -30,8 +30,21 @@ function App() {
   const [finalizado, setFinalizado] = useState(false);
   const [mostrarGraficas, setMostrarGraficas] = useState(false);
   const [registros, setRegistros] = useState([]);
+  const [iglesia, setIglesia] = useState(null);
 
+  const iglesias = [
+    "Iglesia Cartagena",
+    "Iglesia Barranquilla",
+    "Iglesia Bucaramanga",
+    "Iglesia Villa del rosario",
+    "Iglesia Carmen chucuri",
+    "Iglesia valledupar",
+    "Iglesia Santamarta",
+  ];
 
+  // ========================
+  // 🎨 Animación fondo
+  // ========================
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
@@ -45,7 +58,15 @@ function App() {
     return () => document.head.removeChild(style);
   }, []);
 
+  // ========================
+  // 📤 Enviar respuestas
+  // ========================
   const siguiente = async () => {
+    if (!iglesia) {
+      alert("Debe seleccionar una iglesia");
+      return;
+    }
+
     const pregunta = preguntas[pasoActual];
 
     const nuevasRespuestas = {
@@ -57,28 +78,44 @@ function App() {
     setValor(0);
 
     if (pasoActual === preguntas.length - 1) {
-      await axios.post(`${API}/`, nuevasRespuestas);
+      const envioFinal = {
+        ...nuevasRespuestas,
+        iglesia,
+        fecha: new Date(), // 🔥 IMPORTANTE
+      };
+
+      await axios.post(`${API}/`, envioFinal);
+
       setFinalizado(true);
 
       setTimeout(() => {
         setFinalizado(false);
         setMostrarGraficas(true);
         cargarDatos();
-      }, 4000);
+      }, 3000);
     } else {
       setPasoActual(pasoActual + 1);
     }
   };
 
+  // ========================
+  // 📥 Cargar datos
+  // ========================
   const cargarDatos = async () => {
     const res = await axios.get(`${API}/`);
     setRegistros(res.data);
   };
 
   // ========================
-  // 📊 Cálculo semanal
+  // 🔎 FILTRAR POR IGLESIA
   // ========================
+  const registrosFiltrados = registros.filter(
+    (r) => r.iglesia === iglesia
+  );
 
+  // ========================
+  // 📊 CÁLCULO SEMANAL
+  // ========================
   const hoy = new Date();
   const inicioSemana = new Date();
   inicioSemana.setDate(hoy.getDate() - hoy.getDay());
@@ -87,12 +124,12 @@ function App() {
   const inicioSemanaPasada = new Date(inicioSemana);
   inicioSemanaPasada.setDate(inicioSemanaPasada.getDate() - 7);
 
-  const semanaActual = registros.filter((r) => {
+  const semanaActual = registrosFiltrados.filter((r) => {
     const fecha = new Date(r.fecha);
     return fecha >= inicioSemana;
   });
 
-  const semanaPasada = registros.filter((r) => {
+  const semanaPasada = registrosFiltrados.filter((r) => {
     const fecha = new Date(r.fecha);
     return fecha >= inicioSemanaPasada && fecha < inicioSemana;
   });
@@ -107,38 +144,40 @@ function App() {
   }));
 
   // ========================
-  // 📈 Agrupar por mes
+  // 📈 AGRUPAR POR MES
   // ========================
+  const agruparPorMes = () => {
+    const resumen = {};
 
- const agruparPorMes = () => {
-  const resumen = {};
+    registrosFiltrados.forEach((r) => {
+      if (!r.fecha) return;
 
-  registros.forEach((r) => {
-    if (!r.fecha) return;
-
-    const fecha = new Date(r.fecha);
-    const mes = fecha.toLocaleString("es-ES", { month: "long", year: "numeric" });
-
-    // Inicializamos todas las keys de preguntas para este mes
-    if (!resumen[mes]) {
-      resumen[mes] = { mes };
-      preguntas.forEach((p) => {
-        resumen[mes][p.key] = 0; // ✅ inicializamos todas
+      const fecha = new Date(r.fecha);
+      const mes = fecha.toLocaleString("es-ES", {
+        month: "long",
+        year: "numeric",
       });
-    }
 
-    // Sumamos todas las keys
-    preguntas.forEach((p) => {
-      resumen[mes][p.key] += Number(r[p.key] || 0);
+      if (!resumen[mes]) {
+        resumen[mes] = { mes };
+        preguntas.forEach((p) => {
+          resumen[mes][p.key] = 0;
+        });
+      }
+
+      preguntas.forEach((p) => {
+        resumen[mes][p.key] += Number(r[p.key] || 0);
+      });
     });
-  });
 
-  return Object.values(resumen);
-};
+    return Object.values(resumen);
+  };
 
   const dataMes = agruparPorMes();
 
-  // 🎨 Fondo base
+  // ========================
+  // 🎨 ESTILOS
+  // ========================
   const fondo = {
     minHeight: "100vh",
     padding: "40px",
@@ -163,9 +202,8 @@ function App() {
   };
 
   // ========================
-  // 🎉 Pantalla GIF
+  // 🎉 GIF FINAL
   // ========================
-
   if (finalizado) {
     return (
       <div style={fondo}>
@@ -178,18 +216,18 @@ function App() {
   }
 
   // ========================
-  // 📊 Pantalla gráficas
+  // 📊 GRÁFICAS
   // ========================
-
   if (mostrarGraficas) {
     return (
       <div style={fondo}>
         <div style={glass}>
+          <h2>📍 {iglesia}</h2>
           <h2>📊 Comparación Semanal</h2>
 
           <BarChart width={700} height={300} data={dataComparacion}>
             <CartesianGrid stroke="rgba(255,255,255,0.2)" />
-            <XAxis stroke="white" />
+            <XAxis dataKey="name" stroke="white" />
             <YAxis stroke="white" />
             <Tooltip />
             <Legend />
@@ -199,38 +237,33 @@ function App() {
 
           <h2 style={{ marginTop: 50 }}>📊 Totales por Mes</h2>
 
-          <div
-  style={{
-    width: "100%",
-    overflowX: "auto",
-    paddingBottom: "10px",
-  }}
->
-        <div
-  style={{
-    width: "100%",
-    overflowX: "auto",   // 🔥 Scroll horizontal
-  }}
->
-        <div style={{ overflowX: "auto" }}>
-  <div style={{ width: `${dataMes.length * preguntas.length * 60}px`, minWidth: "700px" }}>
-    <BarChart width={dataMes.length * preguntas.length * 60} height={350} data={dataMes}>
-      <CartesianGrid stroke="rgba(255,255,255,0.2)" />
-      <XAxis dataKey="mes" stroke="white" />
-      <YAxis stroke="white" />
-      <Tooltip />
-      <Legend />
-      {preguntas.map((p, i) => (
-        <Bar
-          key={p.key}
-          dataKey={p.key}
-          fill={["#ffe600", "#ff4ecd", "#00f2ff", "#8aff00", "#00ffe3", "#ff00e3", "#ff7f50"][i % 7]}
-        />
-      ))}
-    </BarChart>
-  </div>
-</div>
-      </div>
+          <div style={{ overflowX: "auto" }}>
+            <div style={{ minWidth: "800px" }}>
+              <BarChart width={800} height={350} data={dataMes}>
+                <CartesianGrid stroke="rgba(255,255,255,0.2)" />
+                <XAxis dataKey="mes" stroke="white" />
+                <YAxis stroke="white" />
+                <Tooltip />
+                <Legend />
+                {preguntas.map((p, i) => (
+                  <Bar
+                    key={p.key}
+                    dataKey={p.key}
+                    fill={
+                      [
+                        "#ffe600",
+                        "#ff4ecd",
+                        "#00f2ff",
+                        "#8aff00",
+                        "#00ffe3",
+                        "#ff00e3",
+                        "#ff7f50",
+                      ][i % 7]
+                    }
+                  />
+                ))}
+              </BarChart>
+            </div>
           </div>
         </div>
       </div>
@@ -238,33 +271,52 @@ function App() {
   }
 
   // ========================
-  // 📝 Preguntas
+  // 📝 FORMULARIO
   // ========================
-
   const preguntaActual = preguntas[pasoActual];
 
   return (
     <div style={fondo}>
       <div style={glass}>
-        <h2>{preguntaActual.titulo}</h2>
+        {!iglesia && (
+          <>
+            <h2>Seleccione la Iglesia</h2>
+            <Select
+              style={{ width: "100%", marginBottom: 20 }}
+              placeholder="Seleccione una iglesia"
+              onChange={(value) => setIglesia(value)}
+              options={iglesias.map((ig) => ({
+                label: ig,
+                value: ig,
+              }))}
+            />
+          </>
+        )}
 
-        <InputNumber
-          min={0}
-          value={valor}
-          onChange={(v) => setValor(v)}
-          style={{ width: "100%", marginTop: 20 }}
-        />
+        {iglesia && (
+          <>
+            <h3>📍 {iglesia}</h3>
+            <h2>{preguntaActual.titulo}</h2>
 
-        <Button
-          type="primary"
-          block
-          style={{ marginTop: 20 }}
-          onClick={siguiente}
-        >
-          {pasoActual === preguntas.length - 1
-            ? "Finalizar"
-            : "Siguiente"}
-        </Button>
+            <InputNumber
+              min={0}
+              value={valor}
+              onChange={(v) => setValor(v)}
+              style={{ width: "100%", marginTop: 20 }}
+            />
+
+            <Button
+              type="primary"
+              block
+              style={{ marginTop: 20 }}
+              onClick={siguiente}
+            >
+              {pasoActual === preguntas.length - 1
+                ? "Finalizar"
+                : "Siguiente"}
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );
