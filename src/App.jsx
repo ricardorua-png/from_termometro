@@ -14,8 +14,7 @@ import {
 const API = import.meta.env.VITE_API_URL;
 
 const preguntas = [
-  { key: "ayudas", titulo: "🎁 Ayudas entregadas" },
-  { key: "virtuales", titulo: "💻 Atenciones virtuales" },
+  { key: "ayudas", titulo: "🎁 Ayudas entregadas" }, 
   { key: "estudios", titulo: "📚 Estudios realizados" },
   { key: "folletos", titulo: "🎞 folletos entregados" },
   { key: "contactos", titulo: "📞 contactos alcanzados" },
@@ -208,7 +207,7 @@ function App() {
     return (
       <div style={fondo}>
         <img
-          src="https://media.giphy.com/media/3KC2jD2QcBOSc/giphy.gif"
+          src="https://cdn.pixabay.com/animation/2024/01/26/14/06/14-06-48-286_512.gif"
           style={{ width: 400 }}
         />
       </div>
