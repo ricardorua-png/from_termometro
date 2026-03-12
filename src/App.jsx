@@ -48,7 +48,7 @@ function App() {
       useEffect(() => {
       const mantenerActivo = setInterval(() => {
         axios.get(API);
-      }, 600000); // 10 minutos
+      }, 60000); // 10 minutos
 
   return () => clearInterval(mantenerActivo);
 }, []);
