@@ -41,6 +41,17 @@ function App() {
     "Iglesia Santamarta",
   ];
 
+
+  // ========================
+  // 🎨activo
+  // ========================
+      useEffect(() => {
+      const mantenerActivo = setInterval(() => {
+        axios.get(API);
+      }, 600000); // 10 minutos
+
+  return () => clearInterval(mantenerActivo);
+}, []);
   // ========================
   // 🎨 Animación fondo
   // ========================
